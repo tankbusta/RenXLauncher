@@ -43,15 +43,20 @@ pub(crate) struct Handler {
 impl Handler {
   /// Check if there are game updates available, makes use of caching.
   fn check_update(&self, done: sciter::Value, error: sciter::Value) -> Result<(), Error> {
-    let renegadex_location = self.configuration.get_game_location();
-    let patch_dir_path = format!("{}/patcher/", renegadex_location).replace("//", "/");
+    let patch_dir_path = self.configuration.get_game_patcher_directory();
+    info!("Checking for updates - Patch Dir {}", patch_dir_path);
+  
     if let Ok(iter) = std::fs::read_dir(patch_dir_path) {
-      if iter.count() != 0 {
+      let num_patch_files = iter.count();
+      info!("Patch Directory has {} files, must resume", num_patch_files);
+      if num_patch_files != 0 {
         crate::spawn_wrapper::spawn(move || -> Result<(), Error> {done.call(None, &make_args!("resume"), None)?; Ok(()) });
         return Ok(());
       }
     }
-    
+
+    // TODO: Refactor this, some duplicate functionality from configuration.rs
+    let renegadex_location = self.configuration.get_game_location();
     let path = format!("{}/UDKGame/Config/DefaultRenegadeX.ini", renegadex_location);
     let ini = Ini::load_from_file(&path);
     let conf = match ini {
@@ -61,6 +66,7 @@ impl Handler {
         return Ok(());
       }
     };
+
     let section = conf.section(Some("RenX_Game.Rx_Game".to_owned())).ok_or_else(|| Error::None(format!("No Configuration section named \"RenX_Game.Rx_Game\"")))?;
     let game_version_number = section.get("GameVersionNumber").ok_or_else(|| Error::None(format!("No key in section \"RenX_Game.Rx_Game\"  named \"GameVersionNumber\"")))?.to_owned();
     drop(section);

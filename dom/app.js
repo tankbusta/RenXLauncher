@@ -33,6 +33,7 @@ class App extends Element {
     globalThis.game_version = Window.this.xcall("get_game_version");
     globalThis.progress = new Progress();
     globalThis.news_items = [];
+    globalThis.skip_patch_confirm = false;
     Window.this.xcall("fetch_resource", "https://totemarts.games/forums/rss/1-recent-news.xml/", { "Referer": "https://totemarts.games/forums/forum/7-news/", "X-Requested-With": "XMLHttpRequest", "TE": "Trailers", "Pragma": "no-cache" }, globalThis.news_feed_callback, {});
   }
 
@@ -47,7 +48,7 @@ class App extends Element {
     ip: <InputModal title="Join by IP" key="Hey there sarge!" placeholder="IP:port" callback={this.join_server} />,
     progress: <ProgressModal />,
     clean_install: <ConfirmationModal title="Clean Game Install" message={<p>Are you sure you want to do this?<br />This will remove any additional content downloaded, and reset your settings!</p>} confirm="Clean!" confirm_callback={this.internal_clean_game} cancel="Uh..." />,
-    validate_install: <ConfirmationModal title="Validate Game Install" message={<p>Are you sure you want to do this?<br />This will also reset your settings!</p>} confirm="Validate!" confirm_callback={this.internal_validate_game} cancel="Uh..." />,
+    validate_install: <ConfirmationModal title="Validate Game Install" message={<p>Are you sure you want to do this?<br />This will also reset your settings!</p>} confirm="Validate!" confirm_callback={() => { this.internal_validate_game(false) }} cancel="Uh..." />,
   };
 
   current = "game";
@@ -139,8 +140,13 @@ class App extends Element {
     console.log("Oh no, he wants to update!");
   }
 
-  internal_validate_game() {
+  internal_validate_game(skip_confirm) {
     try {
+      console.log('skip confirmation?', skip_confirm);
+      if (skip_confirm) {
+        globalThis.skip_patch_confirm = true;
+      }
+
       var overlay = document.$("#overlay");
       overlay.patch(<div id="overlay">{document.body.overlays.progress}</div>);
 

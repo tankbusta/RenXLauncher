@@ -8,8 +8,9 @@ export class Progress extends Object {
   data;
 
   constructor(props) {
-      super(props);
+    super(props);
   }
+
   failure_callback() {
     globalThis.progress.is_in_progress = false;
     globalThis.callback_service.publish("progress", globalThis.progress);

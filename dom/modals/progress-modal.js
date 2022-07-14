@@ -47,7 +47,7 @@ export class ProgressModal extends Element
     }
 
     render(props) {
-        return <div id="progress" class="settings-modal">
+      return <div id="progress" class="settings-modal">
         <div class="titlebar">
           <h3 class="title center uppercase" style="width: *;">{this.current_state}</h3>
           <div class="minimize" close></div>
@@ -66,7 +66,13 @@ export class ProgressModal extends Element
       if (globalThis.progress.data != undefined) {
         this.callback(globalThis.progress);
       }
+
+      console.log('progress modal didMount');
       globalThis.callback_service.subscribe("progress", this, this.callback);
+
+      if (globalThis.skip_patch_confirm) {
+        this.start_patch();
+      }
     }
   
     callback(progress_service) {
@@ -94,6 +100,18 @@ export class ProgressModal extends Element
         patch_progress_total: progress.patch.maximum
       });
     }
+
+    start_patch() {
+      if (!this.in_progress) {
+        console.log("starting download");
+        // Reset this once we start patching just to prevent
+        // issues where it might trigger again
+        globalThis.skip_patch_confirm = false;
+
+        Window.this.xcall("start_download", globalThis.progress.callback, globalThis.progress.success_callback, globalThis.progress.failure_callback);
+        this.in_progress = true;
+      }
+    }
   
     componentWillUnmount() {
       globalThis.callback_service.unsubscribe("progress", this, this.callback);
@@ -106,23 +124,17 @@ export class ProgressModal extends Element
 
     ["on click at button#right"](evt, input) {
       if (!this.in_progress) {
-        console.log("starting download");
-
-        Window.this.xcall("start_download", globalThis.progress.callback, globalThis.progress.success_callback, globalThis.progress.failure_callback);
-        this.in_progress = true;
-        evt.target.content(<p>Pause</p>);
+        this.start_patch();
       } else if (this.paused) {
         console.log("resuming patcher");
 
         Window.this.xcall("resume_patcher");
         this.paused = false;
-        evt.target.content(<p>Pause</p>);
       } else {
         console.log("pausing patcher");
 
         Window.this.xcall("pause_patcher");
         this.paused = true;
-        evt.target.content(<p>Resume</p>);
       }
     }
 }

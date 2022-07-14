@@ -110,6 +110,14 @@ impl Configuration {
         game_dir_abs_path
     }
 
+    // Returns the directory where downloaded patch files are stored
+    pub fn get_game_patcher_directory(&self) -> String {
+        let mut root_game_dir = self.get_game_directory_abs();
+        root_game_dir.push("patcher");
+
+        adjust_canonicalization(root_game_dir)
+    }
+
     pub fn get_game_location(&self) -> String {
         self.get_local_setting("GameLocation")
     }
